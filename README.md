@@ -20,6 +20,31 @@ This starter full stack project has been generated using AlgoKit. See below for 
 
 1. If you update to the latest source code and there are new dependencies, you will need to run `algokit project bootstrap all` again.
 2. Follow step 3 above.
+## 🚀 Features
+
+### ✅ Doctor-Verified NFT Minting
+- Each prescription is minted as an **Algorand Standard Asset (ASA)**.
+- Metadata includes:
+  - Asset name, title, and description
+  - PDF link of the signed prescription
+  - Patient’s wallet address
+- NFT has a **total supply of 1** and **zero decimals** (indivisible)
+
+### ✅ Secure IPFS Storage
+- Prescriptions are uploaded to **IPFS** (e.g., via **Pinata**)
+- IPFS hash is embedded in the **ASA metadata**
+
+### ✅ NFT Transfer to Patient
+- Automatically transferred to the patient’s wallet after minting
+
+### ✅ Immutable Medical Records
+- On-chain, tamper-proof prescription history
+- **Doctor identity verification** supported
+
+### ✅ ARC3 Compliant
+- Compatible with major **Algorand wallets** for seamless access and sharing
+
+---
 
 ## Tools
 
