@@ -8,11 +8,7 @@ import { createNFT } from '../services/algorand';
 const MedicalServices: React.FC = () => {
   const { state: { address, isConnected } } = useWallet();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [name, setName] = useState('');
-  const [unitName, setUnitName] = useState('');
-  const [description, setDescription] = useState('');
   const [ipfsUrl, setIpfsUrl] = useState('');
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -22,27 +18,16 @@ const MedicalServices: React.FC = () => {
     if (file) {
       setSelectedFile(file);
       setUploadError(null);
-
-      // Create preview for images
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setImagePreview(null);
-      }
     }
   };
 
   const handleIpfsUpload = async () => {
-    if (!selectedFile || !name || !unitName) return;
+    if (!selectedFile) return;
     
     try {
       setIsLoading(true);
       setUploadError(null);
-      const url = await uploadToIPFS(selectedFile, name, unitName, description);
+      const url = await uploadToIPFS(selectedFile);
       setIpfsUrl(url);
     } catch (error) {
       console.error('Error uploading to IPFS:', error);
@@ -53,18 +38,14 @@ const MedicalServices: React.FC = () => {
   };
 
   const handleMintNFT = async () => {
-    if (!ipfsUrl || !address || !name || !unitName) return;
+    if (!ipfsUrl || !address) return;
     
     try {
       setIsLoading(true);
-      const imageUrl = imagePreview || 'https://images.pexels.com/photos/3683074/pexels-photo-3683074.jpeg';
       const { assetId, gasFee } = await createNFT(
         address,
-        name,
-        unitName,
-        description,
-        ipfsUrl,
-        imageUrl
+        selectedFile?.name || 'Medical Record',
+        ipfsUrl
       );
       alert(`NFT created successfully!\nAsset ID: ${assetId}\nGas Fee: ${gasFee} ALGO`);
       navigate('/marketplace');
@@ -96,43 +77,10 @@ const MedicalServices: React.FC = () => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Upload className="h-6 w-6 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Create Medical NFT</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Generate IPFS URL</h2>
         </div>
-        
+        <p className="text-sm text-gray-600 mb-4">Upload your medical record to generate an IPFS URL.</p>
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Asset Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter asset name"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Unit Name</label>
-            <input
-              type="text"
-              value={unitName}
-              onChange={(e) => setUnitName(e.target.value)}
-              placeholder="Enter unit name (e.g., MEDNFT)"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter description"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              rows={3}
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700">Medical Record</label>
             <input
@@ -147,25 +95,12 @@ const MedicalServices: React.FC = () => {
                        hover:file:bg-blue-100"
             />
           </div>
-
-          {imagePreview && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Preview</label>
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="max-w-xs rounded-lg shadow-md"
-              />
-            </div>
-          )}
-
           {uploadError && (
             <div className="text-red-600 text-sm">{uploadError}</div>
           )}
-
           <button
             onClick={handleIpfsUpload}
-            disabled={!selectedFile || !name || !unitName || isLoading}
+            disabled={!selectedFile || isLoading}
             className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 
                      disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
@@ -178,30 +113,60 @@ const MedicalServices: React.FC = () => {
               'Generate IPFS URL'
             )}
           </button>
-
           {ipfsUrl && (
             <div className="mt-4 p-4 bg-gray-50 rounded-md">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">IPFS URL:</span>
               </div>
               <p className="mt-2 text-sm text-gray-600 break-all">{ipfsUrl}</p>
-              <button
-                onClick={handleMintNFT}
-                disabled={isLoading}
-                className="mt-4 w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 
-                         disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+              <a
+                href={`https://gateway.pinata.cloud/ipfs/${ipfsUrl.replace('ipfs://', '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 hover:text-blue-700 text-sm mt-2 inline-block"
               >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-                    Minting NFT...
-                  </>
-                ) : (
-                  'Mint NFT'
-                )}
-              </button>
+                View on IPFS Gateway
+              </a>
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Upload className="h-6 w-6 text-green-600" />
+          <h2 className="text-xl font-semibold text-gray-900">Mint NFT</h2>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">Create an NFT from your IPFS URL.</p>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">IPFS URL</label>
+            <input
+              type="text"
+              value={ipfsUrl}
+              onChange={(e) => setIpfsUrl(e.target.value)}
+              placeholder="Enter IPFS URL"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+          <div className="text-sm text-gray-600">
+            <p>Estimated Gas Fee: 0.001 ALGO</p>
+          </div>
+          <button
+            onClick={handleMintNFT}
+            disabled={!ipfsUrl || isLoading}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 
+                     disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                Minting NFT...
+              </>
+            ) : (
+              'Mint NFT'
+            )}
+          </button>
         </div>
       </div>
 

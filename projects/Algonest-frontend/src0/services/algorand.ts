@@ -14,11 +14,8 @@ export const getNFTInfo = async (assetId: number) => {
 
 export const createNFT = async (
   creatorAddress: string,
-  name: string,
-  unitName: string,
-  description: string,
-  ipfsUrl: string,
-  imageUrl: string
+  assetName: string,
+  ipfsUrl: string
 ): Promise<{ assetId: number; gasFee: number }> => {
   // Simulate NFT creation with a delay
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -27,15 +24,13 @@ export const createNFT = async (
   const nftInfo = {
     id: `nft-${assetId}`,
     assetId,
-    name,
-    unitName,
-    description,
-    imageUrl,
+    name: assetName,
+    description: `Medical NFT created by ${creatorAddress}`,
+    imageUrl: 'https://images.pexels.com/photos/3683074/pexels-photo-3683074.jpeg',
     price: 1.5,
     owner: creatorAddress,
     createdAt: new Date().toISOString(),
-    type: 'record',
-    ipfsHash: ipfsUrl
+    type: 'record'
   };
   
   mintedNFTs.set(assetId, nftInfo);

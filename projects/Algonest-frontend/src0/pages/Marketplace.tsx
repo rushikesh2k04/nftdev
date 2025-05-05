@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Filter, Search, Clock, Hash, User, Share2, X, Send, QrCode } from 'lucide-react';
+import { Filter, Search, Clock, Hash, User, Share2, X } from 'lucide-react';
 import { MedicalNFT } from '../types/wallet';
 import { useWallet } from '../context/WalletContext';
 import { getNFTInfo } from '../services/algorand';
@@ -22,51 +22,41 @@ const fetchNFTs = async (): Promise<MedicalNFT[]> => {
 };
 
 const Marketplace: React.FC = () => {
-  const { state: { isConnected, address } } = useWallet();
+  const { state: { isConnected } } = useWallet();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'record' | 'image' | 'report'>('all');
   const [selectedNft, setSelectedNft] = useState<MedicalNFT | null>(null);
-  const [receiverAddress, setReceiverAddress] = useState('');
-  const [isTransferring, setIsTransferring] = useState(false);
-  const [showQR, setShowQR] = useState(false);
 
-  const { data: nfts, isLoading, refetch } = useQuery({
+  const { data: nfts, isLoading } = useQuery({
     queryKey: ['nfts'],
     queryFn: fetchNFTs,
     refetchInterval: 5000
   });
 
-  const handleTransfer = async () => {
-    if (!selectedNft || !receiverAddress || !address) return;
+  const handleShare = (platform: string) => {
+    if (!selectedNft) return;
     
-    try {
-      setIsTransferring(true);
-      // Here you would call your transfer function
-      // For example: await transferNFT(selectedNft.assetId, address, receiverAddress);
-      
-      // Simulate transfer delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      alert('NFT transferred successfully!');
-      setSelectedNft(null);
-      setReceiverAddress('');
-      refetch(); // Refresh NFT list
-    } catch (error) {
-      console.error('Transfer failed:', error);
-      alert('Failed to transfer NFT. Please try again.');
-    } finally {
-      setIsTransferring(false);
+    const nftUrl = `${window.location.origin}/nft/${selectedNft.assetId}`;
+    const text = `Check out this medical NFT: ${selectedNft.name}`;
+    
+    let shareUrl = '';
+    switch (platform) {
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(`${text} ${nftUrl}`)}`;
+        break;
+      case 'gmail':
+        shareUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=&su=${encodeURIComponent(text)}&body=${encodeURIComponent(`${text}\n\n${nftUrl}`)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(nftUrl)}`;
+        break;
+      case 'telegram':
+        shareUrl = `https://t.me/share/url?url=${encodeURIComponent(nftUrl)}&text=${encodeURIComponent(text)}`;
+        break;
     }
-  };
-
-  const getQRCodeUrl = () => {
-    if (!selectedNft) return '';
-    const params = new URLSearchParams({
-      assetId: selectedNft.assetId.toString(),
-      name: selectedNft.name,
-      unitName: selectedNft.unitName,
-    });
-    return `https://perawallet.app/qr-code-generator/receive-asa?${params.toString()}`;
+    
+    window.open(shareUrl, '_blank');
+    setSelectedNft(null);
   };
 
   const filteredNFTs = nfts?.filter(nft => {
@@ -154,7 +144,7 @@ const Marketplace: React.FC = () => {
                     className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                   >
                     <Share2 className="h-4 w-4" />
-                    <span>Transfer</span>
+                    <span>Share</span>
                   </button>
                 </div>
               </div>
@@ -163,97 +153,52 @@ const Marketplace: React.FC = () => {
         </div>
       )}
 
-      {/* Transfer Modal */}
+      {/* Share Modal */}
       {selectedNft && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Transfer NFT</h3>
+              <h3 className="text-lg font-semibold">Share NFT</h3>
               <button
-                onClick={() => {
-                  setSelectedNft(null);
-                  setReceiverAddress('');
-                  setShowQR(false);
-                }}
+                onClick={() => setSelectedNft(null)}
                 className="text-gray-400 hover:text-gray-500"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">From Address</label>
-                <div className="mt-1 p-2 bg-gray-50 rounded-md text-sm break-all">
-                  {address}
-                </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">Share URL:</p>
+              <div className="bg-gray-50 p-2 rounded-md text-sm break-all">
+                {`${window.location.origin}/nft/${selectedNft.assetId}`}
               </div>
+            </div>
 
-              {!showQR && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">To Address</label>
-                  <input
-                    type="text"
-                    value={receiverAddress}
-                    onChange={(e) => setReceiverAddress(e.target.value)}
-                    placeholder="Enter receiver's Pera wallet address"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">NFT Details</label>
-                <div className="mt-1 p-2 bg-gray-50 rounded-md">
-                  <p className="text-sm"><strong>Name:</strong> {selectedNft.name}</p>
-                  <p className="text-sm"><strong>Asset ID:</strong> {selectedNft.assetId}</p>
-                  <p className="text-sm"><strong>Unit Name:</strong> {selectedNft.unitName}</p>
-                </div>
-              </div>
-
-              {showQR ? (
-                <div className="text-center">
-                  <iframe
-                    src={getQRCodeUrl()}
-                    className="w-full h-64 border-0 rounded-lg"
-                    title="Pera Wallet QR Code"
-                  />
-                  <button
-                    onClick={() => setShowQR(false)}
-                    className="mt-4 w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-                  >
-                    Enter Address Manually
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <button
-                    onClick={() => setShowQR(true)}
-                    className="w-full flex items-center justify-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-                  >
-                    <QrCode className="h-4 w-4" />
-                    <span>Show QR Code</span>
-                  </button>
-
-                  <button
-                    onClick={handleTransfer}
-                    disabled={!receiverAddress || isTransferring}
-                    className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {isTransferring ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                        <span>Transferring...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        <span>Transfer NFT</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleShare('whatsapp')}
+                className="flex items-center justify-center space-x-2 p-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+              >
+                <span>WhatsApp</span>
+              </button>
+              <button
+                onClick={() => handleShare('gmail')}
+                className="flex items-center justify-center space-x-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                <span>Gmail</span>
+              </button>
+              <button
+                onClick={() => handleShare('twitter')}
+                className="flex items-center justify-center space-x-2 p-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500"
+              >
+                <span>Twitter</span>
+              </button>
+              <button
+                onClick={() => handleShare('telegram')}
+                className="flex items-center justify-center space-x-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                <span>Telegram</span>
+              </button>
             </div>
           </div>
         </div>

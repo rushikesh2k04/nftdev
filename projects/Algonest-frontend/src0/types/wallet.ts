@@ -9,7 +9,6 @@ export interface MedicalNFT {
   id: string;
   assetId: number;
   name: string;
-  unitName: string;
   description: string;
   imageUrl: string;
   price: number;
@@ -19,16 +18,4 @@ export interface MedicalNFT {
   type: 'record' | 'image' | 'report';
   permissions: string[];
   assetInfo?: any;
-}
-
-export interface NFTMetadata {
-  name: string;
-  unitName: string;
-  description: string;
-  image: string;
-  properties: {
-    type: string;
-    createdAt: string;
-    owner: string;
-  };
 }

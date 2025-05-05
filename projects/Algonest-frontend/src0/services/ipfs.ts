@@ -3,14 +3,9 @@ import FormData from 'form-data';
 
 const PINATA_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIyM2JlZDY5OC1kNTM3LTRlOTItYWZmZC0yOTZhNWMyZDJjNTYiLCJlbWFpbCI6InNyaWthcm5pdmFzLjI0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiIwM2VhNzMwNmE2M2Y2NWUwZTBmMiIsInNjb3BlZEtleVNlY3JldCI6ImJiZWY3YmQ0MWI4ZWNmMTI5NDA0Yjk1ZmFkY2U4YjIzNGU5OTNhYTEzNjVmNmY4NmE5OTVmZmU3NTk3MTU3NDQiLCJleHAiOjE3NzYzNTk3NDl9.Urf_EZo2saEpSvDB06WBhgP5nBYoLM-HAgFhW19JwvY';
 
-export const uploadToIPFS = async (
-  file: File,
-  name: string,
-  unitName: string,
-  description: string
-): Promise<string> => {
+export const uploadToIPFS = async (file: File): Promise<string> => {
   try {
-    // Step 1: Upload image to IPFS
+    // Step 1: Upload File to IPFS
     const fileData = new FormData();
     fileData.append('file', file);
 
@@ -23,18 +18,13 @@ export const uploadToIPFS = async (
     });
 
     const fileHash = fileRes.data.IpfsHash;
-    const imageUrl = `ipfs://${fileHash}`;
+    const fileUrl = `ipfs://${fileHash}`;
 
     // Step 2: Create metadata JSON
     const metadata = {
-      name,
-      unitName,
-      description,
-      image: imageUrl,
-      properties: {
-        type: file.type,
-        createdAt: new Date().toISOString(),
-      },
+      name: file.name,
+      description: `Medical record: ${file.name}`,
+      file: fileUrl,
     };
 
     // Step 3: Upload metadata to IPFS
